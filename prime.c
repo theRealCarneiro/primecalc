@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
 
 		// send divs back to master
 		MPI_Send(df, len_for_cluster, MPI_INT, 0, 1, MPI_COMM_WORLD);
+		free(message_item);
 	}
 
 	if (process_rank == 0){
@@ -72,15 +73,27 @@ int main(int argc, char** argv) {
 	}
 
 	MPI_Finalize();
+	free(df);
 
 	return 0;
 }
 
 int div_num(int x) {
+
+	// every number is divisible by 1 and itself, so we can skip them
 	int div = 2;
-	for (int i = 2; i < x; i++) {
+
+	// odd numbers are never divisible by even numbers, so we skip them
+	int step = x % 2 == 0 ? 1 : 2;
+
+	// min possible div for even numbers is 2 and for odd numbers is 3 (besides 1)
+	int min_div = step + 1;
+
+	// max possible div is x / min_div (besides itself)
+	for (int i = min_div; i < (int)(x / min_div); i += step) {
 		if (x % i == 0)
 			div++;
 	}
+
 	return div;
 }
