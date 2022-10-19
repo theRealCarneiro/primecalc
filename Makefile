@@ -1,7 +1,8 @@
-TARGET=prime
+sequencial:
+	gcc sequencial.c -o sequencial
 
-${TARGET}:
-	mpicc prime.c -o ${TARGET}
+paralelo:
+	mpicc paralelo.c -o paralelo
 
-run: ${TARGET}
+run: paralelo
 	~/openmpi/bin/mpirun -n 67 --machinefile machinefile ${TARGET}
