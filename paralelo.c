@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <sys/time.h>
 #include "prime.c"
 
 int main(int argc, char** argv) {
 
 
+	struct timeval tstart, tend;
 	const char* file_path = "entrada.txt";
 	FILE* file;
     int process_rank, sclients, len_for_cluster;
@@ -42,6 +44,8 @@ int main(int argc, char** argv) {
 
 	}
 
+	gettimeofday(&tstart, NULL);
+
 	int info[2] = {len, len_for_cluster};
 	MPI_Bcast(info, 2, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -63,6 +67,7 @@ int main(int argc, char** argv) {
 
 		// Calulate divs
 		int n = 0;
+		# pragma omp paralell for schedule(dynamic)
 		for (int i = 0; i < info[1]; i++) {
 			buffer[i] = div_num(buffer[i]);
 		}
@@ -81,6 +86,12 @@ int main(int argc, char** argv) {
 					len_for_cluster, MPI_INT, i, 1,
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
+		gettimeofday(&tend, NULL);
+
+		double time_taken = (tend.tv_sec - tstart.tv_sec) * 1e6;
+		time_taken = (time_taken + (tend.tv_usec - 
+							  tstart.tv_usec)) * 1e-6;
+		printf("%fs\n", time_taken);
 
 		// Write to file
 		file = fopen("saida.txt", "w");
@@ -90,10 +101,10 @@ int main(int argc, char** argv) {
 				fprintf(file, "\n");
 		}
 		fclose(file);
+		free(df);
 	}
 
 	MPI_Finalize();
-	free(df);
 
 	return 0;
 }
