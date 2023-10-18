@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include "paralelo.h"
 
+#define WORK_QUEUE_FACTOR 10
+
 int* read_file (int* array_length, int work_queue_size) {
 	FILE* file;
 	*array_length = 0;
@@ -40,6 +42,13 @@ void write_file (int* buffer, int array_length) {
 	fclose (file);
 }
 
+double calculate_time(struct timeval tstart, struct timeval tend) {
+	double time_taken = (tend.tv_sec - tstart.tv_sec) * 1e6;
+	time_taken = (time_taken + (tend.tv_usec - 
+							  tstart.tv_usec)) * 1e-6;
+	return time_taken;
+}
+
 int main (int argc, char** argv) {
 
 	struct timeval tstart, tend;
@@ -52,43 +61,28 @@ int main (int argc, char** argv) {
 
 	if (process_rank == 0) {
 		num_workers = num_process - 1;
-		work_queue_size = num_workers * 2;
+		work_queue_size = num_workers * WORK_QUEUE_FACTOR;
 		df = read_file(&array_length, work_queue_size);
 		task_len = (int) ((array_length) / work_queue_size);
 		printf("NUM WORKERS %d WORK QUEUE LEN %d ARRAY LEN %d TASK LEN %d\n", num_workers, work_queue_size, array_length, task_len);
-	}
 
-	// Send task len to clients
-	/*MPI_Bcast (&task_len, 2, MPI_INT, 0, MPI_COMM_WORLD);*/
-
-	gettimeofday (&tstart, NULL);
-
-	// Handle worker requests
-	if (process_rank == 0) {
+		gettimeofday (&tstart, NULL);
 		handle_workers (df, work_queue_size, num_workers, array_length, task_len);
+		gettimeofday (&tend, NULL);
+
+		write_file(df, array_length);
 	}
 
 	// Request and process tasks
 	else {
+		gettimeofday (&tstart, NULL);
 		handle_tasks(process_rank);
-	}
-
-	// Write to outfile
-	if (process_rank == 0) {
-
-		/*for (int i = 0; i < array_length - 1; i++)*/
-			/*printf("%d\n", df[i]);*/
-
 		gettimeofday (&tend, NULL);
-
-		double time_taken = (tend.tv_sec - tstart.tv_sec) * 1e6;
-		time_taken = (time_taken + (tend.tv_usec - 
-							  tstart.tv_usec)) * 1e-6;
-		printf ("%fs\n", time_taken);
-
-		// Write to file
-		write_file(df, array_length);
 	}
+
+	gettimeofday (&tend, NULL);
+	double time_taken = calculate_time(tstart, tend);
+	printf ("RANK %d %fs\n", process_rank, time_taken);
 
 	free (df);
 	MPI_Finalize ();
