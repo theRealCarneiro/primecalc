@@ -80,7 +80,6 @@ int main (int argc, char** argv) {
 		gettimeofday (&tend, NULL);
 	}
 
-	gettimeofday (&tend, NULL);
 	double time_taken = calculate_time(tstart, tend);
 	printf ("RANK %d %fs\n", process_rank, time_taken);
 
