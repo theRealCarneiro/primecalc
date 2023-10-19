@@ -54,7 +54,7 @@ int send_task (int* df, int task_len, int task_index, int worker_rank,
 
 
 	// if there are no more tasks left
-	if (task_index >= work_queue_size) {
+	if (task_index > work_queue_size) {
 		task_index = NO_MORE_TASKS;
 		MPI_Send (&task_index, 1, MPI_INT, worker_rank, SEND_TASK, MPI_COMM_WORLD);
 		/*printf("NO MORE TASKS\n");*/

@@ -60,10 +60,19 @@ int main (int argc, char** argv) {
     MPI_Comm_rank (MPI_COMM_WORLD, &process_rank);
 
 	if (process_rank == 0) {
+
+		// Get number of workers, tasks and the array
 		num_workers = num_process - 1;
 		work_queue_size = num_workers * WORK_QUEUE_FACTOR;
 		df = read_file(&array_length, work_queue_size);
+
+		// If there's still some work left, up the number of tasks
+		if (array_length % work_queue_size != 0) {
+			work_queue_size++;
+		}
+
 		task_len = (int) ((array_length) / work_queue_size);
+
 		printf("NUM WORKERS %d WORK QUEUE LEN %d ARRAY LEN %d TASK LEN %d\n", num_workers, work_queue_size, array_length, task_len);
 
 		gettimeofday (&tstart, NULL);
